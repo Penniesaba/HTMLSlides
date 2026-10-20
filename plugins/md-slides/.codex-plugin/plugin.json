@@ -1,0 +1,14 @@
+{
+  "name": "md-slides",
+  "version": "0.1.0",
+  "description": "Convert standards-compliant Markdown into a single self-contained HTML slide deck",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "MD Slides",
+    "shortDescription": "Turn Markdown into clean HTML slides",
+    "developerName": "Xiao",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["Turn this Markdown into HTML slides."]
+  }
+}
