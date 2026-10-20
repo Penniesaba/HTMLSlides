@@ -161,6 +161,57 @@ export function classifyPage(page, previous = null) {
   return { type: 'content', main: selection.main, breadcrumb: selection.breadcrumb, warnings }
 }
 
+export function parseToc(page) {
+  const lines = String(page).replace(/\r\n/g, '\n').split('\n')
+  const items = []
+  let fence = false
+  for (const line of lines) {
+    if (isFence(line)) {
+      fence = !fence
+      continue
+    }
+    if (fence) continue
+    const m = line.match(/^(\s*)-\s+(.+?)\s*$/)
+    if (!m) continue
+    const level = m[1].length >= 2 ? 2 : 1
+    const { title } = stripNumber(m[2])
+    items.push({ level, text: title })
+  }
+  return items
+}
+
+export function buildToc(headings) {
+  return headings
+    .filter(h => h.level === 1 || h.level === 2)
+    .map(h => ({ level: h.level, text: h.title }))
+}
+
+function normalizeTitle(text) {
+  return String(text).replace(/\s+/g, ' ').trim().toLowerCase()
+}
+
+export function matchToc(items, headings) {
+  const matched = []
+  const unmatched = []
+  const warnings = []
+  const seen = new Map()
+  for (const item of items) {
+    const key = `${item.level}:${normalizeTitle(item.text)}`
+    if (seen.has(key)) {
+      warnings.push(`duplicate TOC entry: ${item.text}`)
+    }
+    const found = headings.find(h =>
+      h.level === item.level && normalizeTitle(h.title) === normalizeTitle(item.text))
+    if (found) {
+      if (!seen.has(key)) seen.set(key, found)
+      matched.push({ item, heading: found })
+    } else {
+      unmatched.push(item)
+    }
+  }
+  return { matched, unmatched, warnings }
+}
+
 function main() {
   const input = process.argv[2]
   if (!input) {

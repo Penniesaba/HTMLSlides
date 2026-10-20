@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { stripNumber, parseFrontmatter, splitPages, parseHeadings, selectPageTitle, classifyPage } from './validate.mjs'
+import { stripNumber, parseFrontmatter, splitPages, parseHeadings, selectPageTitle, classifyPage, parseToc, buildToc, matchToc } from './validate.mjs'
 
 test('stripNumber removes a dotted number', () => {
   assert.deepEqual(stripNumber('2.4.2 Conditional Access Optimization Agent'),
@@ -89,4 +89,28 @@ test('H1-only page with body is content; without body is divider', () => {
 
 test('TOC page is detected by heading', () => {
   assert.equal(classifyPage('## 目录\n\n- 背景\n  - 行业现状\n', null).type, 'toc')
+})
+
+test('parseToc reads a nested H1/H2 list', () => {
+  const page = '## 目录\n\n- 背景\n  - 行业现状\n- 攻击视角\n  - 威胁模型\n'
+  assert.deepEqual(parseToc(page), [
+    { level: 1, text: '背景' },
+    { level: 2, text: '行业现状' },
+    { level: 1, text: '攻击视角' },
+    { level: 2, text: '威胁模型' },
+  ])
+})
+
+test('buildToc uses H1 and H2 in document order', () => {
+  const hs = parseHeadings('# 1 背景\n## 1.1 行业现状\n## 1.2 攻击面\n# 2 案例\n## 2.1 案例一\n')
+  assert.deepEqual(buildToc(hs).map(i => [i.level, i.text]), [
+    [1, '背景'], [2, '行业现状'], [2, '攻击面'], [1, '案例'], [2, '案例一'],
+  ])
+})
+
+test('matchToc reports unmatched items', () => {
+  const hs = parseHeadings('# 1 背景\n## 1.1 行业现状\n')
+  const r = matchToc([{ level: 1, text: '背景' }, { level: 2, text: '不存在' }], hs)
+  assert.equal(r.matched.length, 1)
+  assert.equal(r.unmatched[0].text, '不存在')
 })
