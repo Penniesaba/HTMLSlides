@@ -94,6 +94,73 @@ export function parseHeadings(page) {
   return headings
 }
 
+export function selectPageTitle(headings) {
+  const warnings = []
+  if (!headings.length) {
+    return { main: null, breadcrumb: [], warnings: ['page has no heading'] }
+  }
+  const byLevel = { 1: [], 2: [], 3: [] }
+  for (const h of headings) {
+    if (byLevel[h.level]) byLevel[h.level].push(h)
+  }
+  const unique = (arr) => (arr.length === 1 ? arr[0] : null)
+  const h1 = unique(byLevel[1])
+  const h2 = unique(byLevel[2])
+  const h3 = unique(byLevel[3])
+
+  if (h3 && h2 && h1) {
+    return { main: h3, breadcrumb: [h1, h2], warnings }
+  }
+  if (h2 && h1) {
+    return { main: h2, breadcrumb: [h1], warnings }
+  }
+  if (h1) {
+    return { main: h1, breadcrumb: [], warnings }
+  }
+  if (byLevel[1].length) {
+    warnings.push('multiple H1 headings on one page')
+    return { main: byLevel[1][0], breadcrumb: [], warnings }
+  }
+  warnings.push('page is missing H1/H2 hierarchy')
+  return { main: headings[0], breadcrumb: [], warnings }
+}
+
+function bodyWithoutHeadings(page) {
+  return String(page).replace(/^#{1,3}\s+.*$/gm, '').trim()
+}
+
+export function classifyPage(page, previous = null) {
+  const headings = parseHeadings(page)
+  const selection = selectPageTitle(headings)
+  const warnings = [...selection.warnings]
+
+  if (headings.length === 0) {
+    const prev = previous && previous.length ? selectPageTitle(previous) : null
+    if (prev && prev.main) {
+      warnings.push('续页：没有标题，继承上一页标题')
+      return {
+        type: 'continuation',
+        main: { ...prev.main, title: `${prev.main.title}（续）` },
+        breadcrumb: prev.breadcrumb || [],
+        warnings,
+      }
+    }
+    warnings.push('续页：没有标题，也没有上一页可继承')
+    return { type: 'continuation', main: null, breadcrumb: [], warnings }
+  }
+
+  const first = headings[0]
+  if (first.level === 2 && /^(目录|contents|table of contents)$/i.test(first.title)) {
+    return { type: 'toc', main: first, breadcrumb: [], warnings }
+  }
+
+  if (headings.length === 1 && first.level === 1 && bodyWithoutHeadings(page) === '') {
+    return { type: 'divider', main: first, breadcrumb: [], warnings }
+  }
+
+  return { type: 'content', main: selection.main, breadcrumb: selection.breadcrumb, warnings }
+}
+
 function main() {
   const input = process.argv[2]
   if (!input) {

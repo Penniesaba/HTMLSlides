@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { stripNumber, parseFrontmatter, splitPages, parseHeadings } from './validate.mjs'
+import { stripNumber, parseFrontmatter, splitPages, parseHeadings, selectPageTitle, classifyPage } from './validate.mjs'
 
 test('stripNumber removes a dotted number', () => {
   assert.deepEqual(stripNumber('2.4.2 Conditional Access Optimization Agent'),
@@ -42,4 +42,51 @@ test('parseHeadings parses levels and numbers', () => {
     [2, '1.1', '行业现状'],
     [3, '1.1.1', '案例'],
   ])
+})
+
+test('single H3 wins with H1/H2 breadcrumb', () => {
+  const hs = parseHeadings('# 1 背景\n## 1.1 行业现状\n### 1.1.1 案例\n')
+  const r = selectPageTitle(hs)
+  assert.equal(r.main.level, 3)
+  assert.deepEqual(r.breadcrumb.map(h => h.title), ['背景', '行业现状'])
+})
+
+test('multiple H3 stops at H2', () => {
+  const hs = parseHeadings('# 1 背景\n## 1.1 行业现状\n### 1.1.1 案例 A\n### 1.1.2 案例 B\n')
+  const r = selectPageTitle(hs)
+  assert.equal(r.main.level, 2)
+  assert.equal(r.main.title, '行业现状')
+  assert.deepEqual(r.breadcrumb.map(h => h.title), ['背景'])
+})
+
+test('multiple H2 stops at H1', () => {
+  const hs = parseHeadings('# 1 背景\n## 1.1 行业现状\n## 1.2 攻击面\n### 1.2.1 案例\n')
+  const r = selectPageTitle(hs)
+  assert.equal(r.main.level, 1)
+  assert.equal(r.main.title, '背景')
+  assert.deepEqual(r.breadcrumb, [])
+})
+
+test('one H2 with no H3 gives H1 breadcrumb', () => {
+  const hs = parseHeadings('# 1 背景\n## 1.1 行业现状\n')
+  const r = selectPageTitle(hs)
+  assert.equal(r.main.level, 2)
+  assert.deepEqual(r.breadcrumb.map(h => h.title), ['背景'])
+})
+
+test('no heading becomes a continuation', () => {
+  const prev = parseHeadings('# 1 背景\n## 1.1 行业现状\n### 1.1.1 案例\n')
+  const r = classifyPage('正文只有一段。', prev)
+  assert.equal(r.type, 'continuation')
+  assert.equal(r.main.title, '案例（续）')
+  assert.ok(r.warnings.some(w => w.includes('续页')))
+})
+
+test('H1-only page with body is content; without body is divider', () => {
+  assert.equal(classifyPage('# 1 背景\n', null).type, 'divider')
+  assert.equal(classifyPage('# 1 背景\n\n一段说明。\n', null).type, 'content')
+})
+
+test('TOC page is detected by heading', () => {
+  assert.equal(classifyPage('## 目录\n\n- 背景\n  - 行业现状\n', null).type, 'toc')
 })
