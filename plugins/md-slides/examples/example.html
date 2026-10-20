@@ -1,0 +1,393 @@
+<!-- md-slides template v1 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Security · 智能体安全</title>
+<style>
+:root{
+  --ink:#1a1a1a;
+  --ink-soft:#555;
+  --faint:#888;
+  --line:#e2e2e2;
+  --line-strong:#cfcfcf;
+  --bg:#ffffff;
+  --accent:#9b1c1c;
+  --accent-soft:#f6e9e9;
+  --link:#1f3a8a;
+  --code-bg:#f6f6f6;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
+body{-webkit-font-smoothing:antialiased;line-height:1.75;}
+
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:50;transition:width .25s ease;}
+.deck{position:relative;}
+.slide{display:none;}
+.slide.active{
+  display:flex;position:fixed;inset:0;align-items:center;justify-content:center;
+  overflow:hidden;animation:fade .25s ease;
+}
+.slide-content{
+  width:100%;max-width:1060px;
+  padding:clamp(28px,5vh,56px) 7vw;
+  transform-origin:center center;
+}
+@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.slide.active.scrollable{align-items:flex-start;justify-content:flex-start;overflow-y:auto;overflow-x:hidden;}
+.slide.active.scrollable .slide-content{transform:none !important;margin:0 auto;padding-top:48px;padding-bottom:72px;}
+
+.breadcrumb{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--faint);margin-bottom:14px;}
+.breadcrumb .sep{margin:0 9px;color:var(--line-strong);}
+.slide-title{font-size:32px;line-height:1.3;font-weight:700;letter-spacing:-.01em;margin:0 0 26px;}
+.sub{font-size:20px;font-weight:650;margin:28px 0 10px;}
+p{margin:0 0 14px;font-size:16.5px;}
+.lead{font-size:19px;color:var(--ink-soft);}
+.muted{color:var(--ink-soft);}
+ul,ol{margin:0 0 16px;padding-left:24px;}
+li{margin:6px 0;font-size:16px;}
+li::marker{color:var(--faint);}
+a{color:var(--link);text-decoration:none;border-bottom:1px solid rgba(31,58,138,.3);}
+a:hover{border-bottom-color:var(--link);}
+strong{font-weight:650;}
+em{color:var(--ink-soft);}
+hr{border:none;border-top:1px solid var(--line);margin:28px 0;}
+blockquote{margin:18px 0;padding:4px 0 4px 18px;border-left:3px solid var(--accent);color:var(--ink-soft);font-size:16px;}
+blockquote p{margin:0;}
+code{font-family:var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:3px;font-size:.88em;}
+pre{background:var(--code-bg);border:1px solid var(--line);border-radius:4px;padding:14px 16px;overflow:auto;font-size:14px;line-height:1.55;}
+pre code{background:none;padding:0;}
+
+figure{margin:22px 0;}
+figure img{max-width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:4px;}
+figcaption{font-size:13px;color:var(--faint);margin-top:8px;font-family:var(--mono);}
+
+table{border-collapse:collapse;width:100%;margin:18px 0;font-size:14.5px;}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;}
+th{background:#fafafa;font-weight:650;color:var(--ink);}
+tbody tr:nth-child(even){background:#fcfcfc;}
+td code{font-size:.85em;}
+
+details{border:1px solid var(--line);border-radius:4px;margin:16px 0;background:#fcfcfc;}
+details summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:15.5px;list-style:none;user-select:none;color:var(--ink);}
+details summary::-webkit-details-marker{display:none;}
+details summary::before{content:"▸ ";color:var(--accent);font-weight:700;}
+details[open] summary::before{content:"▾ ";}
+details[open] summary{border-bottom:1px solid var(--line);}
+details .body{padding:4px 20px 14px;}
+details .body p,details .body li{font-size:15.5px;}
+
+.grid-2,.grid-3{display:grid;gap:18px;align-items:start;}
+.grid-2{grid-template-columns:1fr 1fr;}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-2 figure,.grid-3 figure{margin:0;}
+
+.cover .slide-content{max-width:1060px;}
+.cover .kicker{font-size:13px;letter-spacing:.08em;color:var(--faint);font-family:var(--mono);margin-bottom:18px;text-transform:uppercase;}
+.cover-title{font-size:56px;line-height:1.15;font-weight:750;letter-spacing:-.02em;margin:0 0 18px;}
+.cover-sub{font-size:21px;color:var(--ink-soft);margin:0;}
+.cover-meta{position:absolute;left:7vw;bottom:7vh;font-size:13px;color:var(--faint);font-family:var(--mono);}
+.cover{position:relative;}
+
+.toc-title{font-size:32px;line-height:1.3;font-weight:700;margin:0 0 24px;padding-bottom:14px;border-bottom:1px solid var(--line);}
+.toc-list{display:flex;flex-direction:column;}
+.toc-item{display:block;padding:13px 0;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none;cursor:pointer;transition:color .15s;}
+.toc-item.lvl1{font-size:20px;font-weight:650;}
+.toc-item.lvl2{font-size:15px;color:var(--ink-soft);padding-left:24px;border-bottom:none;padding-top:8px;padding-bottom:8px;}
+.toc-item:hover{color:var(--accent);}
+
+.divider .slide-content{max-width:1060px;}
+.divider-title{font-size:46px;line-height:1.2;font-weight:750;letter-spacing:-.02em;margin:0 0 18px;}
+.divider-desc{font-size:18px;color:var(--ink-soft);max-width:720px;margin:0;}
+.divider-line{width:42px;height:3px;background:var(--accent);margin:0 0 24px;}
+
+#pageno{position:fixed;right:18px;bottom:14px;font-family:var(--mono);font-size:11.5px;color:var(--faint);z-index:40;}
+body.is-cover #pageno{display:none;}
+
+#overview{position:fixed;inset:0;background:rgba(255,255,255,.98);z-index:100;display:none;overflow:auto;padding:50px 6vw;}
+#overview.show{display:block;}
+#overview h3{font-size:15px;color:var(--faint);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin:0 0 20px;}
+.ovgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+.ovcard{border:1px solid var(--line);border-radius:4px;padding:12px 14px;cursor:pointer;min-height:84px;transition:border-color .15s,background .15s;}
+.ovcard:hover{border-color:var(--accent);background:#fafafa;}
+.ovcard .n{font-family:var(--mono);font-size:11px;color:var(--faint);}
+.ovcard .t{font-size:13.5px;font-weight:600;margin-top:4px;line-height:1.4;}
+.ovcard .p{font-size:11px;color:var(--faint);margin-top:4px;}
+
+@media(max-width:720px){
+  .slide-content{padding:48px 6vw 80px;}
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .cover-title,.divider-title{font-size:34px;}
+  .slide-title{font-size:26px;}
+  .toc-item.lvl1{font-size:18px;}
+  .cover-meta{position:static;margin-top:40px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .slide.active{animation:none;}
+  #progress{transition:none;}
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="deck" id="deck">
+<section class="slide cover" data-title="封面">
+  <div class="slide-content">
+    <div class="kicker">领域综述汇报 · 2026</div>
+    <h1 class="cover-title">Agent Security</h1>
+    <p class="cover-sub">智能体安全</p>
+  </div>
+  <div class="cover-meta">张三 · 2026-10-20</div>
+</section>
+<section class="slide toc" data-title="目录">
+  <div class="slide-content">
+    <h1 class="toc-title">目录</h1>
+    <div class="toc-list">
+      <a class="toc-item lvl1" data-goto="3">背景</a>
+      <a class="toc-item lvl2" data-goto="4">行业现状</a>
+      <a class="toc-item lvl2" data-goto="6">案例：Conditional Access</a>
+      <a class="toc-item lvl2" data-goto="7">两个案例对比</a>
+      <a class="toc-item lvl2" data-goto="8">风险地图</a>
+      <a class="toc-item lvl2" data-goto="8">攻击面</a>
+      <a class="toc-item lvl1" data-goto="9">防御</a>
+      <a class="toc-item lvl2" data-goto="10">设计原则</a>
+      <a class="toc-item lvl2" data-goto="11">验证方法</a>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider" data-title="背景">
+  <div class="slide-content">
+    <div class="divider-line"></div>
+    <h1 class="divider-title">背景</h1>
+    <p class="divider-desc">从标准、案例和攻击面三个角度，理解 agent 安全在 2026 年的变化。</p>
+  </div>
+</section>
+
+<section class="slide content" data-title="从模型安全到 agent 安全">
+  <div class="slide-content">
+    <div class="breadcrumb"><span>背景</span><span class="sep">/</span><span>行业现状</span></div>
+    <h1 class="slide-title">从模型安全到 agent 安全</h1>
+    <ul>
+      <li>标准组织开始发布 agent 专项风险清单。</li>
+      <li>攻击面从“模型”扩展到“工具链”。</li>
+      <li>安全团队开始把 agent 当作独立资产来管理。</li>
+    </ul>
+    <blockquote>agent 安全已经不再只是模型安全的一个子集。</blockquote>
+  </div>
+</section>
+
+<section class="slide content" data-title="从模型安全到 agent 安全（续）">
+  <div class="slide-content">
+    <div class="breadcrumb"><span>背景</span><span class="sep">/</span><span>行业现状</span></div>
+    <h1 class="slide-title">从模型安全到 agent 安全（续）</h1>
+    <p>过去一年，变化主要体现在三件事上：</p>
+    <ul>
+      <li>风险从“输出有害”转向“行为越权”。</li>
+      <li>防护从“提示词过滤”转向“权限与工具边界”。</li>
+      <li>评估从“单轮问答”转向“多步任务”。</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide content" data-title="自治边界最清晰的样本">
+  <div class="slide-content">
+    <div class="breadcrumb"><span>背景</span><span class="sep">/</span><span>案例：Conditional Access Optimization Agent</span></div>
+    <h1 class="slide-title">自治边界最清晰的样本</h1>
+    <table>
+      <thead><tr><th>维度</th><th>观察</th></tr></thead>
+      <tbody>
+        <tr><td>权限</td><td>只允许读写租户内的条件访问策略</td></tr>
+        <tr><td>边界</td><td>高风险动作必须人工确认</td></tr>
+        <tr><td>失败</td><td>越权请求会被策略层拒绝</td></tr>
+      </tbody>
+    </table>
+    <figure>
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjIwIiB2aWV3Qm94PSIwIDAgNDAwIDIyMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJBZ2VudCBib3VuZGFyeSBkaWFncmFtIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIyMCIgZmlsbD0iI2ZmZmZmZiIvPgogIDxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSIzOTgiIGhlaWdodD0iMjE4IiBmaWxsPSJub25lIiBzdHJva2U9IiNlMmUyZTIiLz4KICA8dGV4dCB4PSIyNCIgeT0iMzQiIGZvbnQtZmFtaWx5PSJNZW5sbywgQ29uc29sYXMsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzg4OCIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+QUdFTlQgQk9VTkRBUlk8L3RleHQ+CiAgPHJlY3QgeD0iMzAiIHk9IjU4IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjYyIiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjY2ZjZmNmIi8+CiAgPHRleHQgeD0iOTAiIHk9Ijk0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgQmxpbmtNYWNTeXN0ZW1Gb250LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzFhMWExYSI+SG9zdDwvdGV4dD4KICA8cmVjdCB4PSIyNTAiIHk9IjU4IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjYyIiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjY2ZjZmNmIi8+CiAgPHRleHQgeD0iMzEwIiB5PSI5NCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwgU2Vnb2UgVUksIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMxYTFhMWEiPlRvb2w8L3RleHQ+CiAgPGxpbmUgeDE9IjE1MCIgeTE9Ijg5IiB4Mj0iMjUwIiB5Mj0iODkiIHN0cm9rZT0iIzliMWMxYyIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjUgNCIvPgogIDxwb2x5Z29uIHBvaW50cz0iMjQ2LDg0IDI1NCw4OSAyNDYsOTQiIGZpbGw9IiM5YjFjMWMiLz4KICA8dGV4dCB4PSIyMDAiIHk9Ijc4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iTWVubG8sIENvbnNvbGFzLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5YjFjMWMiPnNjb3BlZCBjYWxsPC90ZXh0PgogIDxsaW5lIHgxPSIyNCIgeTE9IjE1MCIgeDI9IjM3NiIgeTI9IjE1MCIgc3Ryb2tlPSIjZTJlMmUyIi8+CiAgPHRleHQgeD0iMjQiIHk9IjE3OCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwgU2Vnb2UgVUksIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiM1NTUiPkhpZ2gtcmlzayBhY3Rpb25zIHJlcXVpcmUgY29uZmlybWF0aW9uLjwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMTk4IiBmb250LWZhbWlseT0iTWVubG8sIENvbnNvbGFzLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiM4ODgiPmZpZy4gMSDCtyBsZWFzdCBwcml2aWxlZ2U8L3RleHQ+Cjwvc3ZnPgo=" alt="条件访问架构">
+      <figcaption>图 1：自治边界</figcaption>
+    </figure>
+    <blockquote>这个案例的价值不在于能力，而在于边界。</blockquote>
+  </div>
+</section>
+
+<section class="slide content" data-title="两个案例对比">
+  <div class="slide-content">
+    <div class="breadcrumb"><span>背景</span></div>
+    <h1 class="slide-title">两个案例对比</h1>
+    <h3 class="sub">案例 A：边界清楚</h3>
+    <ul>
+      <li>工具集合固定。</li>
+      <li>每个工具都有明确权限。</li>
+      <li>高风险动作需要二次确认。</li>
+    </ul>
+    <h3 class="sub">案例 B：边界模糊</h3>
+    <ul>
+      <li>工具可以动态扩展。</li>
+      <li>权限继承自用户会话。</li>
+      <li>缺少动作级审计。</li>
+    </ul>
+    <blockquote>两个案例的差异不在模型能力，而在工具边界。</blockquote>
+  </div>
+</section>
+
+<section class="slide content" data-title="背景">
+  <div class="slide-content">
+    <h1 class="slide-title">背景</h1>
+    <h3 class="sub">风险地图</h3>
+    <ul>
+      <li>目标劫持：攻击者改变 agent 的任务目标。</li>
+      <li>工具滥用：agent 调用了不该调用的工具。</li>
+      <li>记忆投毒：长期记忆被写入恶意内容。</li>
+    </ul>
+    <h3 class="sub">攻击面</h3>
+    <ul>
+      <li>输入面：文档、网页、邮件、搜索结果。</li>
+      <li>工具面：文件系统、浏览器、邮件、数据库。</li>
+      <li>身份面：token、cookie、服务账号。</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide divider" data-title="防御">
+  <div class="slide-content">
+    <div class="divider-line"></div>
+    <h1 class="divider-title">防御</h1>
+    <p class="divider-desc">从设计原则到验证方法，给出一套可落地的最小防线。</p>
+  </div>
+</section>
+
+<section class="slide content scrollable" data-title="最小权限">
+  <div class="slide-content">
+    <div class="breadcrumb"><span>防御</span><span class="sep">/</span><span>设计原则</span></div>
+    <h1 class="slide-title">最小权限</h1>
+    <p>每个工具只拿到完成当前任务所需的最小权限。</p>
+    <pre><code class="language-python">def allow(tool, scope):
+    return tool in scope and scope[tool] == "current-task"</code></pre>
+    <details>
+      <summary>展开：为什么不是“默认允许”</summary>
+      <div class="body">
+        <p>默认允许会把一次提示注入放大成一次完整的工具链攻击。</p>
+        <p>最小权限不能消除注入，但能把影响限制在当前任务内。</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<section class="slide content" data-title="验证方法">
+  <div class="slide-content">
+    <div class="breadcrumb"><span>防御</span></div>
+    <h1 class="slide-title">验证方法</h1>
+    <div class="grid-2">
+      <figure>
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjIwIiB2aWV3Qm94PSIwIDAgNDAwIDIyMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJBZ2VudCBib3VuZGFyeSBkaWFncmFtIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIyMCIgZmlsbD0iI2ZmZmZmZiIvPgogIDxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSIzOTgiIGhlaWdodD0iMjE4IiBmaWxsPSJub25lIiBzdHJva2U9IiNlMmUyZTIiLz4KICA8dGV4dCB4PSIyNCIgeT0iMzQiIGZvbnQtZmFtaWx5PSJNZW5sbywgQ29uc29sYXMsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzg4OCIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+QUdFTlQgQk9VTkRBUlk8L3RleHQ+CiAgPHJlY3QgeD0iMzAiIHk9IjU4IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjYyIiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjY2ZjZmNmIi8+CiAgPHRleHQgeD0iOTAiIHk9Ijk0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgQmxpbmtNYWNTeXN0ZW1Gb250LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzFhMWExYSI+SG9zdDwvdGV4dD4KICA8cmVjdCB4PSIyNTAiIHk9IjU4IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjYyIiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjY2ZjZmNmIi8+CiAgPHRleHQgeD0iMzEwIiB5PSI5NCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwgU2Vnb2UgVUksIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMxYTFhMWEiPlRvb2w8L3RleHQ+CiAgPGxpbmUgeDE9IjE1MCIgeTE9Ijg5IiB4Mj0iMjUwIiB5Mj0iODkiIHN0cm9rZT0iIzliMWMxYyIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjUgNCIvPgogIDxwb2x5Z29uIHBvaW50cz0iMjQ2LDg0IDI1NCw4OSAyNDYsOTQiIGZpbGw9IiM5YjFjMWMiLz4KICA8dGV4dCB4PSIyMDAiIHk9Ijc4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iTWVubG8sIENvbnNvbGFzLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5YjFjMWMiPnNjb3BlZCBjYWxsPC90ZXh0PgogIDxsaW5lIHgxPSIyNCIgeTE9IjE1MCIgeDI9IjM3NiIgeTI9IjE1MCIgc3Ryb2tlPSIjZTJlMmUyIi8+CiAgPHRleHQgeD0iMjQiIHk9IjE3OCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwgU2Vnb2UgVUksIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiM1NTUiPkhpZ2gtcmlzayBhY3Rpb25zIHJlcXVpcmUgY29uZmlybWF0aW9uLjwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMTk4IiBmb250LWZhbWlseT0iTWVubG8sIENvbnNvbGFzLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiM4ODgiPmZpZy4gMSDCtyBsZWFzdCBwcml2aWxlZ2U8L3RleHQ+Cjwvc3ZnPgo=" alt="验证流程 A">
+        <figcaption>图 2：流程 A</figcaption>
+      </figure>
+      <figure>
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjIwIiB2aWV3Qm94PSIwIDAgNDAwIDIyMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJBZ2VudCBib3VuZGFyeSBkaWFncmFtIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIyMCIgZmlsbD0iI2ZmZmZmZiIvPgogIDxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSIzOTgiIGhlaWdodD0iMjE4IiBmaWxsPSJub25lIiBzdHJva2U9IiNlMmUyZTIiLz4KICA8dGV4dCB4PSIyNCIgeT0iMzQiIGZvbnQtZmFtaWx5PSJNZW5sbywgQ29uc29sYXMsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzg4OCIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+QUdFTlQgQk9VTkRBUlk8L3RleHQ+CiAgPHJlY3QgeD0iMzAiIHk9IjU4IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjYyIiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjY2ZjZmNmIi8+CiAgPHRleHQgeD0iOTAiIHk9Ijk0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgQmxpbmtNYWNTeXN0ZW1Gb250LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzFhMWExYSI+SG9zdDwvdGV4dD4KICA8cmVjdCB4PSIyNTAiIHk9IjU4IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjYyIiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjY2ZjZmNmIi8+CiAgPHRleHQgeD0iMzEwIiB5PSI5NCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwgU2Vnb2UgVUksIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMxYTFhMWEiPlRvb2w8L3RleHQ+CiAgPGxpbmUgeDE9IjE1MCIgeTE9Ijg5IiB4Mj0iMjUwIiB5Mj0iODkiIHN0cm9rZT0iIzliMWMxYyIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjUgNCIvPgogIDxwb2x5Z29uIHBvaW50cz0iMjQ2LDg0IDI1NCw4OSAyNDYsOTQiIGZpbGw9IiM5YjFjMWMiLz4KICA8dGV4dCB4PSIyMDAiIHk9Ijc4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iTWVubG8sIENvbnNvbGFzLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5YjFjMWMiPnNjb3BlZCBjYWxsPC90ZXh0PgogIDxsaW5lIHgxPSIyNCIgeTE9IjE1MCIgeDI9IjM3NiIgeTI9IjE1MCIgc3Ryb2tlPSIjZTJlMmUyIi8+CiAgPHRleHQgeD0iMjQiIHk9IjE3OCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwgU2Vnb2UgVUksIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiM1NTUiPkhpZ2gtcmlzayBhY3Rpb25zIHJlcXVpcmUgY29uZmlybWF0aW9uLjwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMTk4IiBmb250LWZhbWlseT0iTWVubG8sIENvbnNvbGFzLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiM4ODgiPmZpZy4gMSDCtyBsZWFzdCBwcml2aWxlZ2U8L3RleHQ+Cjwvc3ZnPgo=" alt="验证流程 B">
+        <figcaption>图 3：流程 B</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+</div>
+<div id="pageno"></div>
+<div id="overview"><h3>幻灯片总览 · 点击跳转（ESC 关闭）</h3><div class="ovgrid" id="ovgrid"></div></div>
+<script>
+const deck=document.getElementById('deck');
+const slides=Array.from(deck.querySelectorAll('.slide'));
+let cur=0;
+const total=slides.length;
+const progress=document.getElementById('progress');
+const pageno=document.getElementById('pageno');
+const overview=document.getElementById('overview');
+const ovgrid=document.getElementById('ovgrid');
+
+function fit(slide){
+  const wrap=slide.querySelector('.slide-content');
+  if(!wrap)return;
+  wrap.style.transform='none';
+  if(slide.classList.contains('scrollable'))return;
+  const avail=window.innerHeight;
+  const needed=wrap.scrollHeight;
+  if(needed<=avail)return;
+  const scale=Math.max(0.5,avail/needed);
+  if(scale===0.5 && needed*0.5>avail+1){
+    slide.classList.add('scrollable');
+    return;
+  }
+  wrap.style.transform='scale('+scale+')';
+}
+
+function show(i){
+  i=Math.max(0,Math.min(total-1,i));
+  if(slides[cur])slides[cur].classList.remove('active');
+  slides[i].classList.add('active');
+  cur=i;
+  progress.style.width=total>1?(i/(total-1)*100)+'%':'100%';
+  pageno.textContent=(i+1)+' / '+total;
+  document.body.classList.toggle('is-cover',slides[i].classList.contains('cover'));
+  requestAnimationFrame(()=>fit(slides[i]));
+  try{history.replaceState(null,'','#s'+(i+1));}catch(e){location.hash='s'+(i+1);}
+}
+
+function next(){show(cur+1);}
+function prev(){show(cur-1);}
+
+function buildOverview(){
+  ovgrid.innerHTML='';
+  slides.forEach((s,i)=>{
+    const t=s.dataset.title||(s.querySelector('h1,h2,h3')?.textContent)||('第 '+(i+1)+' 页');
+    const d=document.createElement('div');
+    d.className='ovcard';
+    d.innerHTML='<div class="n">#'+(i+1)+'</div><div class="t"></div><div class="p">'+(i+1)+' / '+total+'</div>';
+    d.querySelector('.t').textContent=t;
+    d.addEventListener('click',()=>{overview.classList.remove('show');show(i);});
+    ovgrid.appendChild(d);
+  });
+}
+
+function toggleOverview(){
+  overview.classList.toggle('show');
+  if(overview.classList.contains('show'))buildOverview();
+}
+
+document.addEventListener('keydown',e=>{
+  if(overview.classList.contains('show')){
+    if(e.key==='Escape'){e.preventDefault();toggleOverview();}
+    return;
+  }
+  switch(e.key){
+    case 'ArrowRight':case ' ':case 'PageDown':e.preventDefault();next();break;
+    case 'ArrowLeft':case 'PageUp':e.preventDefault();prev();break;
+    case 'Home':e.preventDefault();show(0);break;
+    case 'End':e.preventDefault();show(total-1);break;
+    case 'Escape':e.preventDefault();toggleOverview();break;
+  }
+});
+
+deck.addEventListener('click',e=>{
+  if(e.target.closest('a,summary,details,table,.toc-item,button'))return;
+  const x=e.clientX/window.innerWidth;
+  if(x>0.72)next();else if(x<0.28)prev();
+});
+
+document.querySelectorAll('[data-goto]').forEach(el=>{
+  el.addEventListener('click',ev=>{
+    ev.preventDefault();
+    const target=parseInt(el.dataset.goto,10);
+    if(!isNaN(target))show(target-1);
+  });
+});
+
+window.addEventListener('resize',()=>fit(slides[cur]));
+deck.querySelectorAll('img').forEach(img=>img.addEventListener('load',()=>fit(slides[cur])));
+deck.querySelectorAll('details').forEach(d=>d.addEventListener('toggle',()=>fit(slides[cur])));
+
+const m=location.hash.match(/^#s(\d+)$/);
+show(m?parseInt(m[1],10)-1:0);
+</script>
+</body>
+</html>
