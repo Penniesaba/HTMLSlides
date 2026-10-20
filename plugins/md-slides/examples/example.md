@@ -11,7 +11,7 @@ lang: zh-CN
 
 - 背景
   - 行业现状
-  - 案例：Conditional Access
+  - 案例：Conditional Access Optimization Agent
   - 两个案例对比
   - 风险地图
   - 攻击面

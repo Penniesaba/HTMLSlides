@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { stripNumber, parseFrontmatter, splitPages, parseHeadings, selectPageTitle, classifyPage, parseToc, buildToc, matchToc } from './validate.mjs'
+import fs from 'node:fs'
+import { stripNumber, parseFrontmatter, splitPages, parseHeadings, selectPageTitle, classifyPage, parseToc, buildToc, matchToc, validateHtml, validateMarkdown } from './validate.mjs'
 
 test('stripNumber removes a dotted number', () => {
   assert.deepEqual(stripNumber('2.4.2 Conditional Access Optimization Agent'),
@@ -113,4 +114,70 @@ test('matchToc reports unmatched items', () => {
   const r = matchToc([{ level: 1, text: '背景' }, { level: 2, text: '不存在' }], hs)
   assert.equal(r.matched.length, 1)
   assert.equal(r.unmatched[0].text, '不存在')
+})
+
+const exampleHtml = fs.readFileSync('examples/example.html', 'utf8')
+const templateHtml = fs.readFileSync('assets/template.html', 'utf8')
+const exampleMd = fs.readFileSync('examples/example.md', 'utf8')
+const expectedCount = validateMarkdown(exampleMd).pages.length + 1
+
+test('validateHtml accepts the reference deck', () => {
+  const r = validateHtml(exampleHtml, templateHtml, expectedCount)
+  assert.deepEqual(r.errors, [])
+})
+
+test('validateHtml rejects a modified template style', () => {
+  const broken = exampleHtml.replace('--accent: #9b1c1c;', '--accent: #ff0000;')
+  const r = validateHtml(broken, templateHtml, expectedCount)
+  assert.ok(r.errors.some(e => e.includes('template')))
+})
+
+test('validateHtml rejects a relative image', () => {
+  const broken = exampleHtml.replace(/src="data:image\/svg\+xml;base64,[^"]+"/, 'src="assets/sample.svg"')
+  const r = validateHtml(broken, templateHtml, expectedCount)
+  assert.ok(r.errors.some(e => e.includes('data URI')))
+})
+
+test('validateHtml rejects an external script', () => {
+  const broken = exampleHtml.replace('</body>', '<script src="https://example.com/x.js"></script></body>')
+  const r = validateHtml(broken, templateHtml, expectedCount)
+  assert.ok(r.errors.some(e => e.includes('external')))
+})
+
+test('validateHtml rejects an inline style attribute', () => {
+  const broken = exampleHtml.replace('<h1 class="slide-title">', '<h1 class="slide-title" style="color:red">')
+  const r = validateHtml(broken, templateHtml, expectedCount)
+  assert.ok(r.errors.some(e => e.includes('inline style')))
+})
+
+test('validateHtml rejects a slide-count mismatch', () => {
+  const r = validateHtml(exampleHtml, templateHtml, 99)
+  assert.ok(r.errors.some(e => e.includes('slide count')))
+})
+
+test('validateMarkdown falls back to the first H1 when title is missing', () => {
+  const r = validateMarkdown('# 1 背景\n\n## 1.1 行业现状\n')
+  assert.equal(r.title, '背景')
+  assert.ok(r.warnings.some(w => w.includes('title')))
+})
+
+test('validateMarkdown warns on a dense page', () => {
+  const bullets = Array.from({ length: 8 }, (_, i) => `- item ${i}`).join('\n')
+  const md = `---\ntitle: D\n---\n# 1 背景\n## 1.1 行业现状\n${bullets}\n`
+  const r = validateMarkdown(md)
+  assert.ok(r.warnings.some(w => w.includes('density')))
+})
+
+test('a page starting with H2 inherits the H1 from the document context', () => {
+  const md = '# 1 背景\n\n---\n\n## 1.1 行业现状\n\n### 1.1.1 案例\n'
+  const r = validateMarkdown(md)
+  assert.equal(r.pages[1].type, 'content')
+  assert.equal(r.pages[1].main.level, 3)
+  assert.deepEqual(r.pages[1].breadcrumb.map(h => h.title), ['背景', '行业现状'])
+  assert.ok(!r.warnings.some(w => w.includes('missing H1/H2')))
+})
+
+test('the reference deck has no TOC hierarchy or density warnings', () => {
+  const r = validateMarkdown(exampleMd)
+  assert.ok(!r.warnings.some(w => w.startsWith('page 1:') || w.startsWith('density: page 1')))
 })
