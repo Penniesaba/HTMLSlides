@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { stripNumber, parseFrontmatter, splitPages, parseHeadings, selectPageTitle, classifyPage, parseToc, buildToc, matchToc, validateHtml, validateMarkdown } from './validate.mjs'
+import { stripNumber, parseFrontmatter, splitPages, parseHeadings, selectPageTitle, classifyPage, parseToc, buildToc, matchToc, validateHtml, validateMarkdown, expectedSlides, expectedTypes } from './validate.mjs'
 
 test('stripNumber removes a dotted number', () => {
   assert.deepEqual(stripNumber('2.4.2 Conditional Access Optimization Agent'),
@@ -196,4 +196,12 @@ test('a page starting with H2 inherits the H1 from the document context', () => 
 test('the reference deck has no TOC hierarchy or density warnings', () => {
   const r = validateMarkdown(exampleMd)
   assert.ok(!r.warnings.some(w => w.startsWith('page 1:') || w.startsWith('density: page 1')))
+})
+
+test('auto-generated TOC adds one slide and a toc page type', () => {
+  const r = validateMarkdown(fs.readFileSync('examples/no-toc.md', 'utf8'))
+  assert.equal(r.toc.generated, true)
+  assert.equal(expectedSlides(r), r.pages.length + 2)
+  assert.equal(expectedTypes(r)[1], 'toc')
+  assert.equal(expectedTypes(r).length, expectedSlides(r))
 })

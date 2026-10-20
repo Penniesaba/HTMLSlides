@@ -417,7 +417,20 @@ export function validateMarkdown(source) {
   }
 }
 
-export function validateHtml(html, templateHtml, expectedSlideCount, expectedTypes = []) {
+export function expectedSlides(result) {
+  return result.pages.length + 1 + (result.toc && result.toc.generated ? 1 : 0)
+}
+
+export function expectedTypes(result) {
+  const types = ['cover']
+  if (result.toc && result.toc.generated) types.push('toc')
+  for (const page of result.pages) {
+    types.push(page.type === 'continuation' ? 'content' : page.type)
+  }
+  return types
+}
+
+export function validateHtml(html, templateHtml, expectedSlideCount, pageTypes = []) {
   const errors = []
   const warnings = []
 
@@ -436,10 +449,10 @@ export function validateHtml(html, templateHtml, expectedSlideCount, expectedTyp
     errors.push(`slide count mismatch: expected ${expectedSlideCount}, found ${slideCount}`)
   }
 
-  if (expectedTypes.length) {
+  if (pageTypes.length) {
     const sections = [...html.matchAll(/<section\s+class="slide([^"]*)"[^>]*>/g)].map(m => m[1])
     sections.forEach((classes, i) => {
-      const expected = expectedTypes[i]
+      const expected = pageTypes[i]
       if (!expected) return
       const wanted = expected === 'continuation' ? 'content' : expected
       if (!new RegExp(`(^|\\s)${wanted}(\\s|$)`).test(classes)) {
@@ -497,9 +510,7 @@ function main() {
     const html = fs.readFileSync(outputPath, 'utf8')
     const templatePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../assets/template.html')
     const templateHtml = fs.readFileSync(templatePath, 'utf8')
-    const expectedSlides = result.pages.length + 1
-    const expectedTypes = ['cover', ...result.pages.map(p => (p.type === 'continuation' ? 'content' : p.type))]
-    const htmlResult = validateHtml(html, templateHtml, expectedSlides, expectedTypes)
+    const htmlResult = validateHtml(html, templateHtml, expectedSlides(result), expectedTypes(result))
     errors.push(...htmlResult.errors)
     warnings.push(...htmlResult.warnings)
 

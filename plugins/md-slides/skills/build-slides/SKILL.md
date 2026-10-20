@@ -44,7 +44,7 @@ description: Use when the user asks to make slides, a deck, a presentation, 汇�
 
 - 一个 HTML 文件，无外部依赖、无网络请求。
 - 图片全部是 `data:image/...;base64,...`。
-- 封面 + 源 Markdown 的每一页；页数必须等于源页数 + 1。
+- 封面 + 源 Markdown 的每一页；页数 = 源页数 + 1；如果源文件没有目录页、由你自动补了一页目录，则再 +1。
 - 右下角自动页码；封面不显示但计入总数。
 - 键盘/点击翻页、进度条、`#sN` 深链、ESC 总览。
 
@@ -240,7 +240,7 @@ no heading -> previous main + "（续）"
 
 - [ ] 输出文件名符合 `foo.html` / `foo.slides.html` 规则，没有覆盖非本插件文件。
 - [ ] 封面由 frontmatter 生成；没有页码；没有“按 → 开始”。
-- [ ] 总 slide 数 = 源 Markdown 页数 + 1。
+- [ ] 总 slide 数 = 源 Markdown 页数 + 1；自动补了目录页时再 +1。
 - [ ] 目录有 H1/H2 两级；无编号、无页码；可点击。
 - [ ] 每个内容页有主标题；单 H3 页显示 H1/H2 面包屑；多 H3 页标题停在 H2；多 H2 页停在 H1。
 - [ ] 分区页 section class 是 `.divider`；H1 + 长正文/列表的页是 `.content`。
