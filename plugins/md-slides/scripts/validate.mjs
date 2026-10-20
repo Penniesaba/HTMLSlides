@@ -523,7 +523,9 @@ function main() {
 
   for (const warning of [...new Set(warnings)]) console.log(`WARNING: ${warning}`)
   for (const error of [...new Set(errors)]) console.error(`ERROR: ${error}`)
-  console.log(`${result.pages.length} markdown page(s); ${result.pages.length + 1} slide(s) including cover`)
+  const totalSlides = expectedSlides(result)
+  const tocNote = result.toc.generated ? ' (including auto-generated TOC)' : ''
+  console.log(`${result.pages.length} markdown page(s); ${totalSlides} slide(s) including cover${tocNote}`)
   process.exit(errors.length ? 1 : 0)
 }
 
