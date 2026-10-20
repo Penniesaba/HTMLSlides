@@ -137,6 +137,15 @@ HTML：
 </section>
 ```
 
+图片缺失或远程时，不写 `<img>`，用固定占位块：
+
+```html
+<figure>
+  <div class="muted">[图片缺失] assets/missing.png — 条件访问架构</div>
+  <figcaption>图 1：自治边界</figcaption>
+</figure>
+```
+
 ## 6. 双图页（`grid: 2`）
 
 Markdown：

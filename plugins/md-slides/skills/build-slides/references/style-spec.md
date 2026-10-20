@@ -1,6 +1,6 @@
 # 样式规范（agent 执行版）
 
-目标：纯白、细线、暗红强调、系统字体、markdown 感。所有样式已经写在 `assets/template.html` 的固定 CSS 里。agent 只写结构，不写 CSS，不用 `style=` 内联样式。
+目标：纯白、细线、暗红强调、系统字体、markdown 感。所有样式已经写在 `<plugin-root>/assets/template.html` 的固定 CSS 里（plugin root = 本 skill 目录向上两级）。agent 只写结构，不写 CSS，不用 `style=` 内联样式。
 
 ## 1. 色板与字体
 
@@ -181,6 +181,14 @@
 - `src` 必须是 `data:image/...;base64,...`；不允许相对路径或远程 URL。
 - 图注可选。
 - 最多 3 张；并排用 `div.grid-2` 或 `div.grid-3`。
+- 图片缺失或远程时，不要输出 `<img>`，用固定占位块：
+
+```html
+<figure>
+  <div class="muted">[图片缺失] assets/missing.png — 原图说明</div>
+  <figcaption>图 1：原图说明</figcaption>
+</figure>
+```
 
 ### 7.6 折叠块
 

@@ -402,7 +402,7 @@ description 要覆盖中英文触发词，但不要写成能力清单。
    1. 定位输入文件；读 frontmatter 和页面。
    2. 读 `references/markdown-standard.md`、`page-model.md`、`style-spec.md`（按需）。
    3. 解析页面、标题栈、页面类型、目录。
-   4. 读 `assets/template.html`；保留全部 CSS/JS，只替换占位符。
+   4. 读 `<plugin-root>/assets/template.html`（plugin root = skill 目录向上两级）；保留全部 CSS/JS，只替换占位符。
    5. 生成封面。
    6. 生成目录（员工写或自动）。
    7. 逐页生成：分区页 / 内容页 / 续页；页数与分页位置必须与源 Markdown 一致，不得增删页。图片逐张读入并转成 data URI；缺失/远程图用占位块并记 warning。
@@ -412,7 +412,7 @@ description 要覆盖中英文触发词，但不要写成能力清单。
    11. 汇报：输出路径、页数、warning 列表。
 5. **标题算法**：用 6 行伪代码复述第 6 节，防止 agent 只读 references 的一半。
 6. **模板纪律**：
-   - 必须复制 `assets/template.html` 的 CSS/JS，不得改写、不得引入外部资源。
+   - 必须复制 `<plugin-root>/assets/template.html` 的 CSS/JS，不得改写、不得引入外部资源。
    - 只允许替换 `{{LANG}}`、`{{TITLE}}`、`{{COVER}}`、`{{SLIDES}}`。
    - 页面 section 必须有 `data-title`。
    - 不手写页码；页码由 JS 算。
@@ -433,7 +433,7 @@ description 要覆盖中英文触发词，但不要写成能力清单。
    - 无外部请求。
    - 交互脚本存在。
 9. **平台说明**：
-   - Claude Code / Codex 路径差异；用 Skill 目录相对路径找 `assets/`。
+   - Claude Code / Codex 路径差异；用插件根（skill 目录向上两级）找 `assets/` 和 `scripts/`，用 skill 目录找 `references/`。
    - 不要假设有 Node；校验器可选。
    - 不要调用宿主专有工具。
 
@@ -585,15 +585,16 @@ Skill 运行校验器；如果 Node 不存在，降级为 SKILL.md 内的自检�
   "version": "0.1.0",
   "description": "Convert standards-compliant Markdown into a single HTML slide deck",
   "author": { "name": "Xiao" },
-  "skills": "./skills/",
   "commands": "./commands/"
 }
 ```
 
+Claude Code 会自动发现 `skills/`；manifest 里不再重复写 `skills`，避免组件清单出现重复项。
+
 调用：
 
 - 自动触发：用户说“把这个 md 做成 slides/汇报/PPT/幻灯片”。
-- 显式：`/md-slides:build-slides` 或命令 `/md-slides:build`。
+- 显式：`/md-slides:build-slides`。
 
 ### 11.2 Codex
 
@@ -707,7 +708,7 @@ codex plugin add md-slides@owner-marketplace
 | 长 deck 超出单次输出 | SKILL.md 指示：先写模板骨架，再分段追加 slide；超过 ~30 页时提醒 |
 | 图片内嵌导致 HTML 过大 | 图片原样 base64；输出超过 20MB 给 warning，建议员工先压缩图片；不自动压缩/重采样 |
 | 标题算法理解错 | SKILL.md 内嵌 6 行伪代码 + 多 H3/多 H2 两个例子；校验器检查 |
-| Codex/Claude 路径差异 | 只用 Skill 目录相对路径；两只宿主各测一次 |
+| Codex/Claude 路径差异 | 插件根（skill 目录向上两级）找 assets/scripts；skill 目录找 references；两只宿主各测一次 |
 | 员工目录写错 | 保留原文 + warning，不阻断生成 |
 | 图片路径失效 | 占位块 + warning；输出不保留外部引用，不联网 |
 | 输出覆盖 | 检查生成标记；冲突写 `.slides.html` |

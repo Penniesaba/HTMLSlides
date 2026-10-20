@@ -108,6 +108,13 @@ test('parseToc reads a nested H1/H2 list', () => {
   ])
 })
 
+test('parseToc treats a tab-indented item as level 2', () => {
+  assert.deepEqual(parseToc('## 目录\n\n- 背景\n\t- 行业现状\n'), [
+    { level: 1, text: '背景' },
+    { level: 2, text: '行业现状' },
+  ])
+})
+
 test('buildToc uses H1 and H2 in document order', () => {
   const hs = parseHeadings('# 1 背景\n## 1.1 行业现状\n## 1.2 攻击面\n# 2 案例\n## 2.1 案例一\n')
   assert.deepEqual(buildToc(hs).map(i => [i.level, i.text]), [
@@ -156,6 +163,69 @@ test('validateHtml rejects an inline style attribute', () => {
   assert.ok(r.errors.some(e => e.includes('inline style')))
 })
 
+test('validateHtml allows code text that mentions style and onLoad', () => {
+  const withCode = exampleHtml.replace(
+    '</body>',
+    '<pre><code>const onLoad = 1; &lt;div style="x"&gt;</code></pre></body>',
+  )
+  const r = validateHtml(withCode, templateHtml, expectedCount)
+  assert.deepEqual(r.errors, [])
+})
+
+test('validateHtml rejects a real inline event attribute', () => {
+  const broken = exampleHtml.replace(
+    '<h1 class="slide-title">',
+    '<h1 class="slide-title" onclick="x()">',
+  )
+  const r = validateHtml(broken, templateHtml, expectedCount)
+  assert.ok(r.errors.some(e => e.includes('inline event')))
+})
+
+test('validateHtml rejects external resource attributes', () => {
+  const snippets = [
+    '<video src="https://example.com/x.mp4"></video>',
+    '<img src="data:image/png;base64,AA" srcset="https://example.com/x.png 2x">',
+    '<base href="https://example.com/">',
+    '<meta http-equiv="refresh" content="0;url=https://example.com">',
+    '<svg><image href="https://example.com/x.png"></image></svg>',
+  ]
+  for (const snippet of snippets) {
+    const broken = exampleHtml.replace('</body>', `${snippet}</body>`)
+    const r = validateHtml(broken, templateHtml, expectedCount)
+    assert.ok(r.errors.some(e => e.includes('external')), snippet)
+  }
+})
+
+test('validateHtml rejects an unquoted external image src', () => {
+  const broken = exampleHtml.replace(
+    /src="data:image\/svg\+xml;base64,[^"]+"/,
+    'src=https://example.com/x.png',
+  )
+  const r = validateHtml(broken, templateHtml, expectedCount)
+  assert.ok(r.errors.some(e => e.includes('external') || e.includes('data URI')))
+})
+
+test('validateHtml rejects a slide without .slide-content', () => {
+  const broken = exampleHtml.replace('<div class="slide-content">', '')
+  const r = validateHtml(broken, templateHtml, expectedCount)
+  assert.ok(r.errors.some(e => e.includes('slide-content')))
+})
+
+test('validateHtml rejects a slide without data-title', () => {
+  const broken = exampleHtml.replace('data-title="封面"', '')
+  const r = validateHtml(broken, templateHtml, expectedCount)
+  assert.ok(r.errors.some(e => e.includes('data-title')))
+})
+
+test('validateHtml rejects leftover template placeholders', () => {
+  const broken = exampleHtml.replace(
+    '<title>Agent Security · 智能体安全</title>',
+    '<title>{{TITLE}}</title>',
+  )
+  const r = validateHtml(broken, templateHtml, expectedCount)
+  assert.ok(r.errors.some(e => e.includes('placeholder')))
+})
+
 test('validateHtml rejects a slide-count mismatch', () => {
   const r = validateHtml(exampleHtml, templateHtml, 99)
   assert.ok(r.errors.some(e => e.includes('slide count')))
@@ -193,9 +263,54 @@ test('a page starting with H2 inherits the H1 from the document context', () => 
   assert.ok(!r.warnings.some(w => w.includes('missing H1/H2')))
 })
 
+test('multiple H2s on one page stop at H1 through classifyPage', () => {
+  const r = classifyPage('# 1 背景\n## 1.1 行业现状\n## 1.2 攻击面\n', null, [])
+  assert.equal(r.main.level, 1)
+  assert.equal(r.main.title, '背景')
+  assert.deepEqual(r.breadcrumb, [])
+})
+
+test('multiple H1s on one page warn and use the first', () => {
+  const r = classifyPage('# 1 案例 A\n## 1.1 小节\n# 2 案例 B\n', null, [])
+  assert.equal(r.main.title, '案例 A')
+  assert.ok(r.warnings.some(w => w.includes('multiple H1')))
+})
+
+test('consecutive untitled pages keep the previous continuation title', () => {
+  const md = '# 1 背景\n\n---\n\n## 1.1 行业现状\n\n---\n\n### 1.1.1 案例\n\n---\n\n正文一。\n\n---\n\n正文二。\n'
+  const r = validateMarkdown(md)
+  assert.equal(r.pages[3].main.title, '案例（续）')
+  assert.equal(r.pages[4].main.title, '案例（续）')
+})
+
 test('the reference deck has no TOC hierarchy or density warnings', () => {
   const r = validateMarkdown(exampleMd)
   assert.ok(!r.warnings.some(w => w.startsWith('page 1:') || w.startsWith('density: page 1')))
+})
+
+test('validateMarkdown warns when the employee TOC omits H2s', () => {
+  const md = '## 目录\n\n- 背景\n\n---\n\n# 1 背景\n\n---\n\n## 1.1 行业现状\n\n---\n\n## 1.2 攻击面\n'
+  const r = validateMarkdown(md)
+  assert.ok(r.warnings.some(w => w.includes('TOC missing heading')))
+})
+
+test('validateMarkdown warns on duplicate document headings', () => {
+  const md = '## 目录\n\n- 背景\n\n---\n\n# 1 背景\n\n---\n\n# 2 背景\n'
+  const r = validateMarkdown(md)
+  assert.ok(r.warnings.some(w => w.includes('TOC duplicate heading')))
+})
+
+test('validateMarkdown warns on missing and remote images when baseDir is set', () => {
+  const md = '![missing](nope.png)\n\n![remote](https://example.com/x.png)'
+  const r = validateMarkdown(md, { baseDir: 'examples' })
+  assert.ok(r.warnings.some(w => w.includes('image not found')))
+  assert.ok(r.warnings.some(w => w.includes('remote image')))
+})
+
+test('validateMarkdown accepts an existing local image', () => {
+  const md = '![ok](assets/sample.svg)'
+  const r = validateMarkdown(md, { baseDir: 'examples' })
+  assert.ok(!r.warnings.some(w => w.includes('image')))
 })
 
 test('auto-generated TOC adds one slide and a toc page type', () => {
@@ -204,4 +319,12 @@ test('auto-generated TOC adds one slide and a toc page type', () => {
   assert.equal(expectedSlides(r), r.pages.length + 2)
   assert.equal(expectedTypes(r)[1], 'toc')
   assert.equal(expectedTypes(r).length, expectedSlides(r))
+})
+
+test('skill docs point at the plugin-root template and validator', () => {
+  const skill = fs.readFileSync('skills/build-slides/SKILL.md', 'utf8')
+  assert.match(skill, /<plugin-root>\/assets\/template\.html/)
+  assert.match(skill, /<plugin-root>\/scripts\/validate\.mjs/)
+  assert.ok(fs.existsSync('assets/template.html'))
+  assert.ok(fs.existsSync('scripts/validate.mjs'))
 })

@@ -71,7 +71,7 @@ claude --plugin-dir /path/to/plugins/md-slides
 触发方式：
 
 - 自动：说“把这个 md 做成 slides / 汇报 / 幻灯片”。
-- 显式：`/md-slides:build-slides` 或 `/md-slides:build`。
+- 显式：`/md-slides:build-slides`。
 
 ### Codex
 
@@ -150,7 +150,7 @@ Node 18+，零依赖。没有 Node 时，按 `SKILL.md` 的自检清单人工检
 - 不做多主题、主题编辑器、品牌定制。
 - 不自动配图、不联网。
 - Agent 不自行拆页；页面过密只给 warning，并用缩放/滚动兜底。
-- 目录匹配是精确匹配（剥编号后）；简称不会自动模糊匹配。
+- 目录匹配是精确匹配（剥编号、忽略大小写和多余空白）；简称不会自动模糊匹配。
 
 ## 目录结构
 

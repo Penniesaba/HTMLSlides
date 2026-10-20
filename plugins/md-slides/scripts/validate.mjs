@@ -144,21 +144,15 @@ function isShortDividerBody(page) {
 }
 
 function withContext(pageHeadings, context = []) {
+  const hasH1 = pageHeadings.some(h => h.level === 1)
+  const hasH2 = pageHeadings.some(h => h.level === 2)
   const out = []
-  for (const h of context) out.push(h)
-  for (const h of pageHeadings) {
-    if (h.level === 1) {
-      out.length = 0
-      out.push(h)
-    } else if (h.level === 2) {
-      const h1 = out.find(x => x.level === 1)
-      out.length = 0
-      if (h1) out.push(h1)
-      out.push(h)
-    } else {
-      out.push(h)
-    }
-  }
+  const contextH1 = context.find(h => h.level === 1)
+  const contextH2 = context.find(h => h.level === 2)
+
+  if (!hasH1 && contextH1) out.push(contextH1)
+  if (!hasH1 && !hasH2 && contextH2) out.push(contextH2)
+  out.push(...pageHeadings)
   return out
 }
 
@@ -166,11 +160,16 @@ export function classifyPage(page, previous = null, context = []) {
   const headings = parseHeadings(page)
 
   if (headings.length === 0) {
-    const prev = previous && previous.length ? selectPageTitle(previous) : null
+    const prev = Array.isArray(previous)
+      ? (previous.length ? selectPageTitle(previous) : null)
+      : previous
     if (prev && prev.main) {
+      const title = prev.main.title.endsWith('（续）')
+        ? prev.main.title
+        : `${prev.main.title}（续）`
       return {
         type: 'continuation',
-        main: { ...prev.main, title: `${prev.main.title}（续）` },
+        main: { ...prev.main, title },
         breadcrumb: prev.breadcrumb || [],
         warnings: ['续页：没有标题，继承上一页标题'],
       }
@@ -213,7 +212,7 @@ export function parseToc(page) {
     if (fence) continue
     const m = line.match(/^(\s*)-\s+(.+?)\s*$/)
     if (!m) continue
-    const level = m[1].length >= 2 ? 2 : 1
+    const level = m[1].includes('\t') || m[1].length >= 2 ? 2 : 1
     const { title } = stripNumber(m[2])
     items.push({ level, text: title })
   }
@@ -338,7 +337,30 @@ function numberingWarnings(headings) {
   return warnings
 }
 
-export function validateMarkdown(source) {
+function imageWarnings(rawPages, baseDir) {
+  const warnings = []
+  rawPages.forEach((page, i) => {
+    let fence = false
+    for (const line of page.split('\n')) {
+      if (/^\s*(```|~~~)/.test(line)) {
+        fence = !fence
+        continue
+      }
+      if (fence) continue
+      for (const m of line.matchAll(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g)) {
+        const src = m[2]
+        if (/^(https?:|data:)/i.test(src)) {
+          warnings.push(`page ${i + 1}: remote image not supported: ${src}`)
+        } else if (!fs.existsSync(path.resolve(baseDir, src))) {
+          warnings.push(`page ${i + 1}: image not found: ${src}`)
+        }
+      }
+    }
+  })
+  return warnings
+}
+
+export function validateMarkdown(source, options = {}) {
   const warnings = []
   const errors = []
   const fm = parseFrontmatter(source)
@@ -348,13 +370,12 @@ export function validateMarkdown(source) {
   const allHeadings = []
   const pages = []
   let context = []
-  let previousEffective = null
+  let previousSelection = null
 
   rawPages.forEach((page, i) => {
     const headings = parseHeadings(page)
     allHeadings.push(...headings)
-    const effective = withContext(headings, context)
-    const classification = classifyPage(page, previousEffective, context)
+    const classification = classifyPage(page, previousSelection, context)
     warnings.push(...classification.warnings.map(w => `page ${i + 1}: ${w}`))
     if (classification.type === 'content' || classification.type === 'continuation') {
       warnings.push(...densityWarnings(page, i + 1))
@@ -376,7 +397,10 @@ export function validateMarkdown(source) {
           context = h1 ? [h1, h] : [h]
         }
       }
-      previousEffective = effective
+      previousSelection = {
+        main: classification.main,
+        breadcrumb: classification.breadcrumb,
+      }
     }
   })
 
@@ -393,9 +417,33 @@ export function validateMarkdown(source) {
     tocUnmatched = match.unmatched
     warnings.push(...match.warnings.map(w => `TOC: ${w}`))
     for (const item of match.unmatched) warnings.push(`TOC item not found: ${item.text}`)
+
+    const docHeadings = pages
+      .filter(p => p.type !== 'toc')
+      .flatMap(p => p.headings)
+      .filter(h => h.level <= 2)
+    for (const h of docHeadings) {
+      if (!match.matched.some(m => m.heading === h)) {
+        warnings.push(`TOC missing heading: ${h.title}`)
+      }
+    }
+    const counts = new Map()
+    for (const h of docHeadings) {
+      const key = `${h.level}:${normalizeTitle(h.title)}`
+      counts.set(key, (counts.get(key) || 0) + 1)
+    }
+    for (const [key, count] of counts) {
+      if (count > 1) {
+        warnings.push(`TOC duplicate heading: ${key.split(':').slice(1).join(':')}`)
+      }
+    }
   } else {
     generatedToc = true
     tocItems = buildToc(allHeadings)
+  }
+
+  if (options.baseDir) {
+    warnings.push(...imageWarnings(rawPages, options.baseDir))
   }
 
   let title = fm.data.title || null
@@ -428,6 +476,30 @@ export function expectedTypes(result) {
     types.push(page.type === 'continuation' ? 'content' : page.type)
   }
   return types
+}
+
+function parseAttributes(text) {
+  const attrs = []
+  const re = /([:\w-]+)\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/g
+  let m
+  while ((m = re.exec(text))) {
+    attrs.push({ name: m[1].toLowerCase(), value: m[3] ?? m[4] ?? m[5] ?? '' })
+  }
+  return attrs
+}
+
+function scanStartTags(html) {
+  const tags = []
+  const re = /<([a-zA-Z][\w:-]*)([^<>]*)>/g
+  let m
+  while ((m = re.exec(html))) {
+    tags.push({ name: m[1].toLowerCase(), attrs: parseAttributes(m[2]) })
+  }
+  return tags
+}
+
+function isDataUri(value) {
+  return /^data:/i.test(value)
 }
 
 export function validateHtml(html, templateHtml, expectedSlideCount, pageTypes = []) {
@@ -475,16 +547,52 @@ export function validateHtml(html, templateHtml, expectedSlideCount, pageTypes =
 
   if ((html.match(/<style\b/gi) || []).length > 1) errors.push('extra <style> element')
   if ((html.match(/<script\b/gi) || []).length > 1) errors.push('external or unexpected <script> element')
-  if (/<script\b[^>]*\bsrc\s*=/i.test(html)) errors.push('external script is not allowed')
-  if (/<link\b[^>]*\bhref\s*=/i.test(html)) errors.push('external stylesheet is not allowed')
   if (/<iframe\b/i.test(html)) errors.push('iframe is not allowed')
-  if (/\son[a-z]+\s*=/i.test(html)) errors.push('inline event attribute is not allowed')
-  if (/\sstyle\s*=/i.test(html)) errors.push('inline style attribute is not allowed')
 
-  for (const m of html.matchAll(/<img\b[^>]*\bsrc\s*=\s*["']([^"']*)["']/gi)) {
-    if (!/^data:image\//.test(m[1])) {
-      errors.push('image src must be a data URI')
-      break
+  for (const tag of scanStartTags(html)) {
+    for (const attr of tag.attrs) {
+      if (attr.name === 'style') errors.push('inline style attribute is not allowed')
+      if (/^on[a-z]+$/.test(attr.name)) errors.push('inline event attribute is not allowed')
+
+      if (['src', 'poster', 'data', 'background'].includes(attr.name)) {
+        if (!isDataUri(attr.value)) {
+          errors.push(tag.name === 'img' && attr.name === 'src'
+            ? 'image src must be a data URI'
+            : `external resource is not allowed: <${tag.name} ${attr.name}>`)
+        }
+      }
+
+      if (attr.name === 'srcset') {
+        const urls = attr.value.split(',').map(s => s.trim().split(/\s+/)[0]).filter(Boolean)
+        if (urls.some(u => !isDataUri(u))) {
+          errors.push(`external resource is not allowed: <${tag.name} srcset>`)
+        }
+      }
+
+      if (attr.name === 'href' && ['link', 'base', 'image', 'use'].includes(tag.name)) {
+        if (!isDataUri(attr.value) && !attr.value.startsWith('#')) {
+          errors.push(`external resource is not allowed: <${tag.name} href>`)
+        }
+      }
+
+      if (attr.name === 'http-equiv' && attr.value.toLowerCase() === 'refresh') {
+        errors.push('external resource is not allowed: meta refresh')
+      }
+    }
+  }
+
+  if (/\{\{(LANG|TITLE|COVER|SLIDES)\}\}/.test(html)) {
+    errors.push('unreplaced template placeholder')
+  }
+
+  const sectionRe = /<section\s+class="slide[^"]*"([^>]*)>([\s\S]*?)<\/section>/g
+  let sectionMatch
+  while ((sectionMatch = sectionRe.exec(html))) {
+    if (!/data-title="[^"]+"/.test(sectionMatch[1])) {
+      errors.push('slide is missing data-title')
+    }
+    if (!/class="[^"]*\bslide-content\b[^"]*"/.test(sectionMatch[2])) {
+      errors.push('slide is missing .slide-content')
     }
   }
 
@@ -501,7 +609,7 @@ function main() {
 
   const inputPath = path.resolve(input)
   const source = fs.readFileSync(inputPath, 'utf8')
-  const result = validateMarkdown(source)
+  const result = validateMarkdown(source, { baseDir: path.dirname(inputPath) })
   const errors = [...result.errors]
   const warnings = [...result.warnings]
 

@@ -38,6 +38,7 @@ description: Use when the user asks to make slides, a deck, a presentation, 汇�
 - 输入 `foo.md` → 同目录 `foo.html`。
 - 如果 `foo.html` 已存在，且**没有**模板哨兵 `<!-- md-slides template v1 -->`：写 `foo.slides.html`，不要覆盖。
 - 如果已存在且**有**哨兵：说明是上次生成的，可以覆盖。
+- 如果 `foo.slides.html` 也已存在且没有哨兵：停下来报告，不要覆盖，也不要自动生成第三个名字；让用户决定。
 - 不要用 deck 标题、日期或 `slides.html` 之类的名字；输出名只由输入文件名决定。
 
 ### 最终产物
@@ -72,22 +73,22 @@ description: Use when the user asks to make slides, a deck, a presentation, 汇�
    - 解析每页的 H1/H2/H3，剥掉行首编号。
    - 维护文档级 H1/H2 上下文：后面的页可以只写 H2/H3，继承前面的 H1/H2。
 4. **判定页面**：目录页、分区页、内容页、续页；封面不在 Markdown 里，由 frontmatter 生成。
-5. **读模板**：读本 Skill 目录下的 `assets/template.html`。保留全部 CSS/JS，只替换 `{{LANG}}`、`{{TITLE}}`、`{{COVER}}`、`{{SLIDES}}`。
+5. **读模板**：读 `<plugin-root>/assets/template.html`。`plugin-root` 是本 `SKILL.md` 所在目录向上两级（`../..`）。保留全部 CSS/JS，只替换 `{{LANG}}`、`{{TITLE}}`、`{{COVER}}`、`{{SLIDES}}`。
 6. **生成封面**：只用 frontmatter 的 `title`、`subtitle`、`kicker`、`author`、`date`；缺省就省略。不要加“按 → 开始”提示。
 7. **生成目录**：
    - 有 `## 目录` 页：按员工写的 H1/H2 嵌套列表渲染，匹配标题、生成 `data-goto`。
    - 没有：从全文 H1/H2 自动生成一页，放在封面之后。
-   - 两种情况都不显示编号、不显示页码。
+   - 目录项不显示编号、不显示页码；目录页本身仍有右下角页码。
 8. **逐页生成**：
    - 分区页：整页只有一个 H1，正文为空或只有一段 ≤200 字的说明，且没有列表/表格/代码/图片；渲染成 `.divider`。
    - 内容页：按标题算法生成 B 面包屑 + 主标题；正文转 HTML。
    - 续页：继承上一页标题并追加“（续）”。
    - 页数与分页位置必须和源 Markdown 一致；**不得自行拆页或合页**。
-9. **处理图片**：每张本地图片读成 base64，写成 data URI；缺失/远程图片用占位块并记 warning；最终 HTML 里不得出现相对路径或远程 `src`。
+9. **处理图片**：每张本地图片读成 base64，写成 data URI；缺失/远程图片用 `<figure><div class="muted">[图片缺失] path — alt</div><figcaption>caption</figcaption></figure>` 占位并记 warning；不要输出 `<img>`，最终 HTML 里不得出现相对路径或远程 `src`。
 10. **写文件**：按输出规则写入；确认没有覆盖非本插件生成的文件。
 11. **自检**：如果 Node 可用，运行：
     ```bash
-    node <skill-dir>/scripts/validate.mjs <input.md> <output.html>
+    node <plugin-root>/scripts/validate.mjs <input.md> <output.html>
     ```
     有 error 就修 HTML 后重跑，最多 2 次；warning 保留到最终报告。Node 不可用时，用本文末尾的自检清单。
 12. **汇报**：输出路径、总页数、warning 列表。不要贴整份 HTML。
@@ -138,11 +139,11 @@ lang: zh-CN
 有员工目录时：
 
 1. 解析嵌套列表：一级 = H1，缩进二级 = H2。
-2. 用“剥编号 + trim + 压缩空白”的标题文字匹配全文标题。
+2. 用“剥编号 + trim + 压缩空白 + 忽略大小写”的标题文字匹配全文标题。
 3. 匹配成功：生成 `data-goto`（1-based）。
 4. 匹配失败：保留文字，不加链接，warning。
 5. 同名标题：匹配第一次出现，warning。
-6. 不显示编号，不显示页码。
+6. 目录项不显示编号、不显示页码；目录页本身仍有右下角页码。
 
 没有员工目录时：按全文顺序生成 H1/H2 两级目录，放在封面之后。
 
@@ -155,7 +156,7 @@ lang: zh-CN
 
 ## Validation Output
 
-`node scripts/validate.mjs input.md output.html`：
+`node <plugin-root>/scripts/validate.mjs input.md output.html`：
 
 - exit 0：结构没问题；warning 照常报告。
 - exit 1：有结构 error（缺模板哨兵、缺 `#pageno`、slide 数不对、模板 CSS/JS 被改、外部资源、非 data URI 图片）。修 HTML 后重跑，最多 2 次。
@@ -197,7 +198,7 @@ no heading -> previous main + "（续）"
 - 页面类型 class：`.cover`、`.toc`、`.divider`、`.content`、`.scrollable`；图片网格用 `.grid-2` / `.grid-3`。
 - 标题结构：`.breadcrumb`、`.slide-title`、`.sub`。
 
-如果 `assets/template.html` 缺失或读不到：停下来报告，不要自己发明 CSS。
+如果 `<plugin-root>/assets/template.html` 缺失或读不到：停下来报告，不要自己发明 CSS。
 
 ## Error Handling
 
@@ -241,7 +242,7 @@ no heading -> previous main + "（续）"
 - [ ] 输出文件名符合 `foo.html` / `foo.slides.html` 规则，没有覆盖非本插件文件。
 - [ ] 封面由 frontmatter 生成；没有页码；没有“按 → 开始”。
 - [ ] 总 slide 数 = 源 Markdown 页数 + 1；自动补了目录页时再 +1。
-- [ ] 目录有 H1/H2 两级；无编号、无页码；可点击。
+- [ ] 目录有 H1/H2 两级；目录项无编号/页码（目录页本身有页码）；可点击。
 - [ ] 每个内容页有主标题；单 H3 页显示 H1/H2 面包屑；多 H3 页标题停在 H2；多 H2 页停在 H1。
 - [ ] 分区页 section class 是 `.divider`；H1 + 长正文/列表的页是 `.content`。
 - [ ] 所有标题都不带行首编号。
@@ -253,17 +254,18 @@ no heading -> previous main + "（续）"
 ## Platform Notes
 
 - Claude Code 和 Codex 共用这个 Skill；不要调用宿主专有工具。
-- `references/`、`assets/`、`scripts/` 都在本 `SKILL.md` 所在目录下；用 Skill 目录解析，不要用当前工作目录。
+- `references/` 在本 `SKILL.md` 所在目录下；`assets/`、`scripts/` 在插件根（`../..`）。用这些路径解析，不要用当前工作目录。
 - 校验器需要 Node 18+；没有 Node 就人工自检，不要因此拒绝生成。
 - 不要写 `.claude/`、`.codex/` 或宿主配置文件。
 - 不要联网。
 
 ## Path Resolution
 
-- Skill 目录 = 本 `SKILL.md` 所在目录。
-- `assets/template.html`、`references/*.md`、`scripts/validate.mjs` 都相对 Skill 目录。
+- Skill 目录 = `skills/build-slides/`。
+- 插件根 = Skill 目录向上两级（`../..`）。
+- 模板 = `<plugin-root>/assets/template.html`；校验器 = `<plugin-root>/scripts/validate.mjs`；引用 = `<skill-dir>/references/*.md`。
 - 输入 `.md`、图片路径、输出 `.html` 相对用户的工作目录 / 输入文件所在目录。
-- 不要把 Skill 目录当成当前工作目录。
+- 不要把 Skill 目录或插件根当成当前工作目录。
 
 ## Do Not Ask
 
@@ -301,5 +303,5 @@ HTML：
 - `references/page-model.md` — 页面类型、标题算法、目录匹配。
 - `references/style-spec.md` — 固定样式与 HTML 结构。
 - `references/recipes.md` — 常见页面配方。
-- `assets/template.html` — 唯一允许使用的模板。
-- `scripts/validate.mjs` — 生成后自检。
+- `<plugin-root>/assets/template.html` — 唯一允许使用的模板。
+- `<plugin-root>/scripts/validate.mjs` — 生成后自检。
