@@ -53,7 +53,8 @@ description: Use when the user asks to make slides, a deck, a presentation, 汇�
 | 源 Markdown | 页面类型 | 标题 |
 |---|---|---|
 | 第一页是 `## 目录` | 目录 | “目录” |
-| 整页只有一个 H1 | 分区页 | H1 |
+| 整页只有一个 H1，正文为空或只有一段 ≤200 字说明 | 分区页 | H1 |
+| 整页只有一个 H1，但有列表/表格/代码/图片或长正文 | 内容页 | H1 |
 | 一个 H1 + 一个 H2 + 一个 H3 | 内容页 | H3，面包屑 H1/H2 |
 | 一个 H1 + 一个 H2 + 多个 H3 | 内容页 | H2，面包屑 H1 |
 | 一个 H1 + 多个 H2 | 内容页 | H1，无面包屑 |
@@ -78,7 +79,7 @@ description: Use when the user asks to make slides, a deck, a presentation, 汇�
    - 没有：从全文 H1/H2 自动生成一页，放在封面之后。
    - 两种情况都不显示编号、不显示页码。
 8. **逐页生成**：
-   - 分区页：只有 H1（可带一句说明）。
+   - 分区页：整页只有一个 H1，正文为空或只有一段 ≤200 字的说明，且没有列表/表格/代码/图片；渲染成 `.divider`。
    - 内容页：按标题算法生成 B 面包屑 + 主标题；正文转 HTML。
    - 续页：继承上一页标题并追加“（续）”。
    - 页数与分页位置必须和源 Markdown 一致；**不得自行拆页或合页**。
@@ -242,6 +243,7 @@ no heading -> previous main + "（续）"
 - [ ] 总 slide 数 = 源 Markdown 页数 + 1。
 - [ ] 目录有 H1/H2 两级；无编号、无页码；可点击。
 - [ ] 每个内容页有主标题；单 H3 页显示 H1/H2 面包屑；多 H3 页标题停在 H2；多 H2 页停在 H1。
+- [ ] 分区页 section class 是 `.divider`；H1 + 长正文/列表的页是 `.content`。
 - [ ] 所有标题都不带行首编号。
 - [ ] 所有 `<img src>` 都是 `data:image/...;base64,...`。
 - [ ] 没有 `<style>`、`style=`、额外 `<script>`、外部 `<link>`、`<iframe>`。

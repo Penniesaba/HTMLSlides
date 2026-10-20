@@ -3,6 +3,5 @@
   "version": "0.1.0",
   "description": "Convert standards-compliant Markdown into a single self-contained HTML slide deck",
   "author": { "name": "Xiao" },
-  "skills": "./skills/",
   "commands": "./commands/"
 }

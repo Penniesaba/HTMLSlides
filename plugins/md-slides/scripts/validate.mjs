@@ -129,6 +129,20 @@ function bodyWithoutHeadings(page) {
   return String(page).replace(/^#{1,3}\s+.*$/gm, '').trim()
 }
 
+function isShortDividerBody(page) {
+  const body = bodyWithoutHeadings(page)
+  if (body === '') return true
+  if (body.length > 200) return false
+  if (body.split(/\n\s*\n/).length > 1) return false
+  if (/^\s*([-*+]|\d+\.)\s+/m.test(body)) return false
+  if (/^\s*\|/m.test(body)) return false
+  if (/^\s*(```|~~~)/m.test(body)) return false
+  if (/^\s*>/m.test(body)) return false
+  if (/!\[/.test(body)) return false
+  if (/<details/i.test(body)) return false
+  return true
+}
+
 function withContext(pageHeadings, context = []) {
   const out = []
   for (const h of context) out.push(h)
@@ -174,7 +188,7 @@ export function classifyPage(page, previous = null, context = []) {
     return { type: 'toc', main: first, breadcrumb: [], warnings: [] }
   }
 
-  if (headings.length === 1 && first.level === 1 && bodyWithoutHeadings(page) === '') {
+  if (headings.length === 1 && first.level === 1 && isShortDividerBody(page)) {
     return { type: 'divider', main: first, breadcrumb: [], warnings: [] }
   }
 
@@ -403,7 +417,7 @@ export function validateMarkdown(source) {
   }
 }
 
-export function validateHtml(html, templateHtml, expectedSlideCount) {
+export function validateHtml(html, templateHtml, expectedSlideCount, expectedTypes = []) {
   const errors = []
   const warnings = []
 
@@ -420,6 +434,18 @@ export function validateHtml(html, templateHtml, expectedSlideCount) {
   const slideCount = (html.match(/<section\s+class="slide\b/g) || []).length
   if (slideCount !== expectedSlideCount) {
     errors.push(`slide count mismatch: expected ${expectedSlideCount}, found ${slideCount}`)
+  }
+
+  if (expectedTypes.length) {
+    const sections = [...html.matchAll(/<section\s+class="slide([^"]*)"[^>]*>/g)].map(m => m[1])
+    sections.forEach((classes, i) => {
+      const expected = expectedTypes[i]
+      if (!expected) return
+      const wanted = expected === 'continuation' ? 'content' : expected
+      if (!new RegExp(`(^|\\s)${wanted}(\\s|$)`).test(classes)) {
+        errors.push(`slide ${i + 1} class should be ${wanted}`)
+      }
+    })
   }
 
   const templateStyle = extractBlock(templateHtml, 'style')
@@ -472,7 +498,8 @@ function main() {
     const templatePath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../assets/template.html')
     const templateHtml = fs.readFileSync(templatePath, 'utf8')
     const expectedSlides = result.pages.length + 1
-    const htmlResult = validateHtml(html, templateHtml, expectedSlides)
+    const expectedTypes = ['cover', ...result.pages.map(p => (p.type === 'continuation' ? 'content' : p.type))]
+    const htmlResult = validateHtml(html, templateHtml, expectedSlides, expectedTypes)
     errors.push(...htmlResult.errors)
     warnings.push(...htmlResult.warnings)
 

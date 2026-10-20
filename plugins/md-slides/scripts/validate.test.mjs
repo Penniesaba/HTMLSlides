@@ -83,9 +83,15 @@ test('no heading becomes a continuation', () => {
   assert.ok(r.warnings.some(w => w.includes('续页')))
 })
 
-test('H1-only page with body is content; without body is divider', () => {
+test('H1-only page with a short note is a divider; a long body is content', () => {
   assert.equal(classifyPage('# 1 背景\n', null).type, 'divider')
-  assert.equal(classifyPage('# 1 背景\n\n一段说明。\n', null).type, 'content')
+  assert.equal(classifyPage('# 1 背景\n\n一段说明。\n', null).type, 'divider')
+  const long = `# 1 背景\n\n${'这是很长的正文。'.repeat(40)}\n`
+  assert.equal(classifyPage(long, null).type, 'content')
+})
+
+test('H1-only page with a list is content', () => {
+  assert.equal(classifyPage('# 1 背景\n\n- 第一点\n- 第二点\n', null).type, 'content')
 })
 
 test('TOC page is detected by heading', () => {
@@ -153,6 +159,16 @@ test('validateHtml rejects an inline style attribute', () => {
 test('validateHtml rejects a slide-count mismatch', () => {
   const r = validateHtml(exampleHtml, templateHtml, 99)
   assert.ok(r.errors.some(e => e.includes('slide count')))
+})
+
+test('validateHtml rejects a divider page rendered as content', () => {
+  const types = ['cover', ...validateMarkdown(exampleMd).pages.map(p => p.type === 'continuation' ? 'content' : p.type)]
+  const broken = exampleHtml.replace(
+    '<section class="slide divider" data-title="背景">',
+    '<section class="slide content" data-title="背景">',
+  )
+  const r = validateHtml(broken, templateHtml, expectedCount, types)
+  assert.ok(r.errors.some(e => e.includes('slide 3') && e.includes('divider')))
 })
 
 test('validateMarkdown falls back to the first H1 when title is missing', () => {
