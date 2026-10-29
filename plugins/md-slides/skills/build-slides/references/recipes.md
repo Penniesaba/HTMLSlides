@@ -11,7 +11,9 @@ Markdown：
 
 2026 年被称为 agent 安全的元年。
 
-> agent 安全已经不再只是模型安全的一个子集。
+agent 安全已经不再只是模型安全的一个子集。
+
+> 这行是注释，不会出现在 slides 里。
 ```
 
 HTML：
@@ -22,10 +24,12 @@ HTML：
     <div class="breadcrumb"><span>背景</span></div>
     <h1 class="slide-title">行业现状</h1>
     <p>2026 年被称为 agent 安全的元年。</p>
-    <blockquote>agent 安全已经不再只是模型安全的一个子集。</blockquote>
+    <p>agent 安全已经不再只是模型安全的一个子集。</p>
   </div>
 </section>
 ```
+
+以 `>` 开头的行一律按注释忽略，不生成 `<blockquote>`。
 
 ## 2. 三条 bullet 页
 

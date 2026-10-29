@@ -142,11 +142,12 @@
 </ul>
 ```
 
-### 7.2 引用
+### 7.2 注释
 
-```html
-<blockquote>引用或提示。</blockquote>
-```
+Markdown 中以 `>` 开头的行是作者注释，不生成任何 HTML。
+
+- 不要输出 `<blockquote>`；validator 会把它当作 error。
+- 注释不占版面；观众需要看到的内容不能写在注释里。
 
 ### 7.3 表格
 

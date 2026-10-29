@@ -57,6 +57,28 @@ function isFence(line) {
   return /^\s*(```|~~~)/.test(line)
 }
 
+function isBlockquote(line) {
+  return /^ {0,3}>/.test(line)
+}
+
+// Lines starting with `>` are author comments: they never render and never
+// count toward page classification or density checks. Fenced code is kept.
+function stripBlockquotes(text) {
+  const lines = String(text).replace(/\r\n/g, '\n').split('\n')
+  const out = []
+  let fence = false
+  for (const line of lines) {
+    if (isFence(line)) {
+      fence = !fence
+      out.push(line)
+      continue
+    }
+    if (!fence && isBlockquote(line)) continue
+    out.push(line)
+  }
+  return out.join('\n')
+}
+
 export function splitPages(body) {
   const lines = String(body).replace(/\r\n/g, '\n').split('\n')
   const pages = []
@@ -126,7 +148,7 @@ export function selectPageTitle(headings) {
 }
 
 function bodyWithoutHeadings(page) {
-  return String(page).replace(/^#{1,3}\s+.*$/gm, '').trim()
+  return stripBlockquotes(page).replace(/^#{1,3}\s+.*$/gm, '').trim()
 }
 
 function isShortDividerBody(page) {
@@ -137,7 +159,6 @@ function isShortDividerBody(page) {
   if (/^\s*([-*+]|\d+\.)\s+/m.test(body)) return false
   if (/^\s*\|/m.test(body)) return false
   if (/^\s*(```|~~~)/m.test(body)) return false
-  if (/^\s*>/m.test(body)) return false
   if (/!\[/.test(body)) return false
   if (/<details/i.test(body)) return false
   return true
@@ -262,13 +283,14 @@ function extractBlock(html, tag) {
 
 function densityWarnings(page, pageNumber) {
   const warnings = []
-  const bullets = (page.match(/^\s*[-*+]\s+/gm) || []).length
+  const content = stripBlockquotes(page)
+  const bullets = (content.match(/^\s*[-*+]\s+/gm) || []).length
   if (bullets > 6) {
     warnings.push(`density: page ${pageNumber} has ${bullets} bullets (recommended <= 6)`)
   }
 
   let maxColumns = 0
-  for (const line of page.split('\n')) {
+  for (const line of content.split('\n')) {
     if (!line.includes('|')) continue
     const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '')
     const columns = trimmed.split('|').length
@@ -280,7 +302,7 @@ function densityWarnings(page, pageNumber) {
 
   let fence = false
   let codeLines = 0
-  for (const line of page.split('\n')) {
+  for (const line of content.split('\n')) {
     if (/^\s*(```|~~~)/.test(line)) {
       fence = !fence
       continue
@@ -341,7 +363,7 @@ function imageWarnings(rawPages, baseDir) {
   const warnings = []
   rawPages.forEach((page, i) => {
     let fence = false
-    for (const line of page.split('\n')) {
+    for (const line of stripBlockquotes(page).split('\n')) {
       if (/^\s*(```|~~~)/.test(line)) {
         fence = !fence
         continue
@@ -548,6 +570,7 @@ export function validateHtml(html, templateHtml, expectedSlideCount, pageTypes =
   if ((html.match(/<style\b/gi) || []).length > 1) errors.push('extra <style> element')
   if ((html.match(/<script\b/gi) || []).length > 1) errors.push('external or unexpected <script> element')
   if (/<iframe\b/i.test(html)) errors.push('iframe is not allowed')
+  if (/<blockquote\b/i.test(html)) errors.push('blockquote is not allowed: > lines are comments')
 
   for (const tag of scanStartTags(html)) {
     for (const attr of tag.attrs) {

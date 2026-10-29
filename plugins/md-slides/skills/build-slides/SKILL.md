@@ -70,6 +70,7 @@ description: Use when the user asks to make slides, a deck, a presentation, 汇�
 3. **解析结构**：
    - 解析 frontmatter。
    - 用独立 `---` 行分页；忽略代码块里的 `---`。
+   - 以 `>` 开头的行是作者注释：整行忽略，不参与标题、页面类型或密度判断，也不输出到 HTML。
    - 解析每页的 H1/H2/H3，剥掉行首编号。
    - 维护文档级 H1/H2 上下文：后面的页可以只写 H2/H3，继承前面的 H1/H2。
 4. **判定页面**：目录页、分区页、内容页、续页；封面不在 Markdown 里，由 frontmatter 生成。
@@ -81,7 +82,7 @@ description: Use when the user asks to make slides, a deck, a presentation, 汇�
    - 目录项不显示编号、不显示页码；目录页本身仍有右下角页码。
 8. **逐页生成**：
    - 分区页：整页只有一个 H1，正文为空或只有一段 ≤200 字的说明，且没有列表/表格/代码/图片；渲染成 `.divider`。
-   - 内容页：按标题算法生成 B 面包屑 + 主标题；正文转 HTML。
+   - 内容页：按标题算法生成 B 面包屑 + 主标题；正文转 HTML，`>` 开头的注释行直接跳过。
    - 续页：继承上一页标题并追加“（续）”。
    - 页数与分页位置必须和源 Markdown 一致；**不得自行拆页或合页**。
 9. **处理图片**：每张本地图片读成 base64，写成 data URI；缺失/远程图片用 `<figure><div class="muted">[图片缺失] path — alt</div><figcaption>caption</figcaption></figure>` 占位并记 warning；不要输出 `<img>`，最终 HTML 里不得出现相对路径或远程 `src`。
@@ -122,7 +123,7 @@ lang: zh-CN
 | 行内代码 | `<code>` |
 | `[text](url)` | `<a href="...">text</a>`；外链加 `target="_blank" rel="noopener"` |
 | `- item` / `1. item` | `<ul><li>` / `<ol><li>` |
-| `> quote` | `<blockquote>` |
+| `> comment` | 忽略，不输出任何 HTML（如同注释） |
 | 管道表格 | `<table><thead>...<tbody>...` |
 | 三反引号代码 | `<pre><code class="language-...">`，转义 `<` `>` `&` |
 | `![alt](path "caption")` | `<figure><img src="data:..."><figcaption>` |
@@ -213,6 +214,7 @@ no heading -> previous main + "（续）"
 | 一页多个 H3 | 主标题停在 H2；H3 变页内小节 |
 | 一页多个 H2 | 主标题停在 H1；H2 变页内小节 |
 | 图片缺失/远程 | 占位块 + warning；不保留外部引用 |
+| Markdown 里有 `>` 注释 | 直接忽略；不输出 `<blockquote>` |
 | 页面过密 | 缩放 → 自动滚动；warning 建议员工拆页；**不自行拆页** |
 | 输出已存在且非本插件生成 | 写 `foo.slides.html` |
 | 模板 CSS/JS 被改 | 修回模板；validator 会报 error |
@@ -229,6 +231,7 @@ no heading -> previous main + "（续）"
 | “员工目录不如我自动生成的好” | 有员工目录就用员工的；只在缺省时自动生成 |
 | “H2 才是页面标题” | 标题取“唯一且祖先唯一”的最深一级；单 H3 页主标题是 H3 |
 | “把节号显示出来更清楚” | 编号只用于校验，slides 中不显示 |
+| “把 `>` 渲染成引用块更完整” | `>` 开头是作者注释，直接忽略，不输出 `<blockquote>` |
 | “页码补零更整齐” | 用 `current / total`，不要 `02 / 11` |
 | “只有小图需要内嵌” | 所有本地图片都内嵌；不允许任何外部 `src` |
 | “加一点打印样式/动画” | 模板之外不加任何样式或脚本 |
@@ -247,6 +250,7 @@ no heading -> previous main + "（续）"
 - [ ] 分区页 section class 是 `.divider`；H1 + 长正文/列表的页是 `.content`。
 - [ ] 所有标题都不带行首编号。
 - [ ] 所有 `<img src>` 都是 `data:image/...;base64,...`。
+- [ ] 没有 `<blockquote>`：`>` 开头的行都按注释忽略了。
 - [ ] 没有 `<style>`、`style=`、额外 `<script>`、外部 `<link>`、`<iframe>`。
 - [ ] `.slide-content`、`data-title`、`#pageno`、`#progress`、`#overview` 都在。
 - [ ] validator exit 0；warning 已在报告中列出。

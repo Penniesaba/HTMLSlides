@@ -94,6 +94,25 @@ test('H1-only page with a list is content', () => {
   assert.equal(classifyPage('# 1 背景\n\n- 第一点\n- 第二点\n', null).type, 'content')
 })
 
+test('blockquote notes are ignored when classifying a page', () => {
+  assert.equal(classifyPage('# 1 背景\n\n> 写给自己看的短注释。\n', null).type, 'divider')
+  assert.equal(classifyPage(`# 1 背景\n\n> ${'写给自己看的注释。'.repeat(40)}\n`, null).type, 'divider')
+  assert.equal(classifyPage('# 1 背景\n\n> - 注释里的列表\n> - 不算正文\n', null).type, 'divider')
+})
+
+test('blockquote content does not count toward density warnings', () => {
+  const rows = '> | a | b | c | d | e | f | g |\n> |---|---|---|---|---|---|---|'
+  const md = `---\ntitle: D\n---\n# 1 背景\n## 1.1 行业现状\n\n${rows}\n`
+  const r = validateMarkdown(md)
+  assert.ok(!r.warnings.some(w => w.includes('density')), r.warnings.join('\n'))
+})
+
+test('images inside blockquotes are comments and do not warn', () => {
+  const md = '# 1 背景\n\n> ![注释里的图](nope.png)\n'
+  const r = validateMarkdown(md, { baseDir: 'examples' })
+  assert.ok(!r.warnings.some(w => w.includes('image')), r.warnings.join('\n'))
+})
+
 test('TOC page is detected by heading', () => {
   assert.equal(classifyPage('## 目录\n\n- 背景\n  - 行业现状\n', null).type, 'toc')
 })
@@ -239,6 +258,12 @@ test('validateHtml rejects a divider page rendered as content', () => {
   )
   const r = validateHtml(broken, templateHtml, expectedCount, types)
   assert.ok(r.errors.some(e => e.includes('slide 3') && e.includes('divider')))
+})
+
+test('validateHtml rejects a rendered blockquote', () => {
+  const broken = exampleHtml.replace('</body>', '<blockquote>comment</blockquote></body>')
+  const r = validateHtml(broken, templateHtml, expectedCount)
+  assert.ok(r.errors.some(e => e.includes('blockquote')), r.errors.join('\n'))
 })
 
 test('validateMarkdown falls back to the first H1 when title is missing', () => {

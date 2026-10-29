@@ -55,8 +55,6 @@ a:hover{border-bottom-color:var(--link);}
 strong{font-weight:650;}
 em{color:var(--ink-soft);}
 hr{border:none;border-top:1px solid var(--line);margin:28px 0;}
-blockquote{margin:18px 0;padding:4px 0 4px 18px;border-left:3px solid var(--accent);color:var(--ink-soft);font-size:16px;}
-blockquote p{margin:0;}
 code{font-family:var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:3px;font-size:.88em;}
 pre{background:var(--code-bg);border:1px solid var(--line);border-radius:4px;padding:14px 16px;overflow:auto;font-size:14px;line-height:1.55;}
 pre code{background:none;padding:0;}
@@ -176,7 +174,6 @@ body.is-cover #pageno{display:none;}
       <li>攻击面从“模型”扩展到“工具链”。</li>
       <li>安全团队开始把 agent 当作独立资产来管理。</li>
     </ul>
-    <blockquote>agent 安全已经不再只是模型安全的一个子集。</blockquote>
   </div>
 </section>
 
@@ -209,7 +206,6 @@ body.is-cover #pageno{display:none;}
       <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMjIwIiB2aWV3Qm94PSIwIDAgNDAwIDIyMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJBZ2VudCBib3VuZGFyeSBkaWFncmFtIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIyMCIgZmlsbD0iI2ZmZmZmZiIvPgogIDxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSIzOTgiIGhlaWdodD0iMjE4IiBmaWxsPSJub25lIiBzdHJva2U9IiNlMmUyZTIiLz4KICA8dGV4dCB4PSIyNCIgeT0iMzQiIGZvbnQtZmFtaWx5PSJNZW5sbywgQ29uc29sYXMsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzg4OCIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+QUdFTlQgQk9VTkRBUlk8L3RleHQ+CiAgPHJlY3QgeD0iMzAiIHk9IjU4IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjYyIiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjY2ZjZmNmIi8+CiAgPHRleHQgeD0iOTAiIHk9Ijk0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgQmxpbmtNYWNTeXN0ZW1Gb250LCBTZWdvZSBVSSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNSIgZmlsbD0iIzFhMWExYSI+SG9zdDwvdGV4dD4KICA8cmVjdCB4PSIyNTAiIHk9IjU4IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjYyIiByeD0iNCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjY2ZjZmNmIi8+CiAgPHRleHQgeD0iMzEwIiB5PSI5NCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwgU2Vnb2UgVUksIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMxYTFhMWEiPlRvb2w8L3RleHQ+CiAgPGxpbmUgeDE9IjE1MCIgeTE9Ijg5IiB4Mj0iMjUwIiB5Mj0iODkiIHN0cm9rZT0iIzliMWMxYyIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1kYXNoYXJyYXk9IjUgNCIvPgogIDxwb2x5Z29uIHBvaW50cz0iMjQ2LDg0IDI1NCw4OSAyNDYsOTQiIGZpbGw9IiM5YjFjMWMiLz4KICA8dGV4dCB4PSIyMDAiIHk9Ijc4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iTWVubG8sIENvbnNvbGFzLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5YjFjMWMiPnNjb3BlZCBjYWxsPC90ZXh0PgogIDxsaW5lIHgxPSIyNCIgeTE9IjE1MCIgeDI9IjM3NiIgeTI9IjE1MCIgc3Ryb2tlPSIjZTJlMmUyIi8+CiAgPHRleHQgeD0iMjQiIHk9IjE3OCIgZm9udC1mYW1pbHk9Ii1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwgU2Vnb2UgVUksIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiM1NTUiPkhpZ2gtcmlzayBhY3Rpb25zIHJlcXVpcmUgY29uZmlybWF0aW9uLjwvdGV4dD4KICA8dGV4dCB4PSIyNCIgeT0iMTk4IiBmb250LWZhbWlseT0iTWVubG8sIENvbnNvbGFzLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiM4ODgiPmZpZy4gMSDCtyBsZWFzdCBwcml2aWxlZ2U8L3RleHQ+Cjwvc3ZnPgo=" alt="条件访问架构">
       <figcaption>图 1：自治边界</figcaption>
     </figure>
-    <blockquote>这个案例的价值不在于能力，而在于边界。</blockquote>
   </div>
 </section>
 
@@ -229,7 +225,6 @@ body.is-cover #pageno{display:none;}
       <li>权限继承自用户会话。</li>
       <li>缺少动作级审计。</li>
     </ul>
-    <blockquote>两个案例的差异不在模型能力，而在工具边界。</blockquote>
   </div>
 </section>
 

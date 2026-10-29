@@ -13,7 +13,7 @@ Markdown 编写标准：
 
 [`skills/build-slides/references/markdown-standard.md`](skills/build-slides/references/markdown-standard.md)
 
-一句话规则：**用 `---` 分页，用 H1/H2/H3 组织标题，编号手写但不显示，图片用本地相对路径。**
+一句话规则：**用 `---` 分页，用 H1/H2/H3 组织标题，编号手写但不显示，图片用本地相对路径，`>` 开头是注释不渲染。**
 
 最小示例：
 
